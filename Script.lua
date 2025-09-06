@@ -30,15 +30,15 @@ local Window = Rayfield:CreateWindow({
 
 -- Variables
 local teleportTargets = {
-"Alpha Wolf", "Alpha Wolf Pelt", "Anvil Base", "Apple", "Bandage", "Bear", "Berry", 
-"Bolt", "Broken Fan", "Broken Microwave", "Bunny", "Bunny Foot", "Cake", "Carrot", "Chair Set", "Chest", "Chilli",
-"Coal", "Coin Stack", "Crossbow Cultist", "Cultist", "Cultist Gem", "Deer", "Fuel Canister", "Good Sack", "Good Axe", "Iron Body",
-"Item Chest", "Item Chest2", "Item Chest3", "Item Chest4", "Item Chest6", "Leather Body", "Log", "Lost Child",
-"Lost Child2", "Lost Child3", "Lost Child4", "Medkit", "Meat? Sandwich", "Morsel", "Old Car Engine", "Old Flashlight", "Old Radio", "Oil Barrel",
-"Revolver", "Revolver Ammo", "Rifle", "Rifle Ammo", "Riot Shield", "Sapling", "Seed Box", "Sheet Metal", "Spear",
-"Steak", "Stronghold Diamond Chest", "Tyre", "Washing Machine", "Wolf", "Wolf Corpse", "Wolf Pelt"
+    "Alien", "Alien Chest", "Alien Shelf", "Alpha Wolf", "Alpha Wolf Pelt", "Anvil Base", "Apple", "Bandage", "Bear", "Berry",
+    "Bolt", "Broken Fan", "Broken Microwave", "Bunny", "Bunny Foot", "Cake", "Carrot", "Chair Set", "Chest", "Chilli",
+    "Coal", "Coin Stack", "Crossbow Cultist", "Cultist", "Cultist Gem", "Deer", "Fuel Canister", "Giant Sack", "Good Axe", "Iron Body",
+    "Item Chest", "Item Chest2", "Item Chest3", "Item Chest4", "Item Chest6", "Laser Fence Blueprint", "Laser Sword", "Leather Body", "Log", "Lost Child",
+    "Lost Child2", "Lost Child3", "Lost Child4", "Medkit", "Meat? Sandwich", "Morsel", "Old Car Engine", "Old Flashlight", "Old Radio", "Oil Barrel",
+    "Raygun", "Revolver", "Revolver Ammo", "Rifle", "Rifle Ammo", "Riot Shield", "Sapling", "Seed Box", "Sheet Metal", "Spear",
+    "Steak", "Stronghold Diamond Chest", "Tyre", "UFO Component", "UFO Junk", "Washing Machine", "Wolf", "Wolf Corpse", "Wolf Pelt"
 }
-local AimbotTargets = {"Alpha Wolf", "Wolf", "Crossbow Cultist", "Cultist", "Bunny", "Bear", "Polar Bear"}
+local AimbotTargets = {"Alien", "Alpha Wolf", "Wolf", "Crossbow Cultist", "Cultist", "Bunny", "Bear", "Polar Bear"}
 local espEnabled = false
 local npcESPEnabled = false
 local ignoreDistanceFrom = Vector3.new(0, 0, 0)
@@ -111,8 +111,8 @@ local function createESP(item)
     if not item:FindFirstChild("ESP_Highlight") then
         local highlight = Instance.new("Highlight")
         highlight.Name = "ESP_Highlight"
-        highlight.FillColor = Color3.fromRGB(255, 255, 255)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillColor = Color3.fromRGB(255, 85, 0)
+        highlight.OutlineColor = Color3.fromRGB(0, 100, 0)
         highlight.FillTransparency = 0.25
         highlight.OutlineTransparency = 0
         highlight.Adornee = item:IsA("Model") and item or adorneePart
@@ -247,184 +247,24 @@ task.spawn(function()
     end
 end)
 
-local AutoLogFarmEnabled = false
-local LogDropType = "Campfire" -- or "Grinder"
-
-local function teleportToClosestLog()
-    local closest, shortest = nil, math.huge
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "Log" and obj:IsA("Model") then
-            local cf = nil
-            if pcall(function() cf = obj:GetPivot() end) then
-                -- success
-            else
-                local part = obj:FindFirstChildWhichIsA("BasePart")
-                if part then cf = part.CFrame end
-            end
-            if cf then
-                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local dist = (cf.Position - hrp.Position).Magnitude
-                    if dist < shortest then
-                        closest = obj
-                        shortest = dist
-                    end
-                end
-            end
-        end
-    end
-    if closest then
-        local cf = nil
-        if pcall(function() cf = closest:GetPivot() end) then
-            -- success
-        else
-            local part = closest:FindFirstChildWhichIsA("BasePart")
-            if part then cf = part.CFrame end
-        end
-        if cf then
-            LocalPlayer.Character:PivotTo(cf + Vector3.new(0, 5, 0)) -- Teleport 5 studs above log
-            return closest
-        end
-    end
-    return nil
-end
-
-
-local function getBagPickupCount()
-    if LogBagType == "Old Sack" then
-        return 5
-    elseif LogBagType == "Good Sack" then
-        return 15
-    elseif LogBagType == "Auto" then
-        local bag = getBagType()
-        if bag == "Good Sack" then return 15 end
-        if bag == "Old Sack" then return 5 end
-    end
-    return 0
-end
-
-task.spawn(function()
-    while true do
-        if AutoLogFarmEnabled then
-            local pickupCount = getBagPickupCount()
-            if pickupCount == 0 then
-                Rayfield:Notify({Title="Auto Log Farm", Content="No sack type selected or found!", Duration=3})
-                AutoLogFarmEnabled = false
-                continue
-            end
-
-            -- Find the nearest log
-            local log = getClosestLog()
-            if log then
-                -- Teleport above log
-                local pos = log.Position or (log.PrimaryPart and log.PrimaryPart.Position)
-                if pos then
-                    LocalPlayer.Character:PivotTo(CFrame.new(pos + Vector3.new(0, 2, 0)))
-                    task.wait(0.5)
-                    -- Move mouse to feet
-                    local footPos = LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
-                    local screen = camera:WorldToScreenPoint(footPos)
-                    VirtualInputManager:SendMouseMoveEvent(screen.X, screen.Y, game)
-                    task.wait(0.25)
-                    -- Pickup logs (F then E, x times)
-                    for i=1, pickupCount do
-                        pressKey("F")
-                        pressKey("E")
-                        task.wait(0.13)
-                    end
-
-                    -- Teleport to drop location
-                    if LogDropType == "Campfire" then
-                        LocalPlayer.Character:PivotTo(CFrame.new(0, 10, 0))
-                    else
-                        LocalPlayer.Character:PivotTo(CFrame.new(16.1,4,-4.6))
-                    end
-                    task.wait(2)
-                end
-            else
-                Rayfield:Notify({Title="Auto Log Farm", Content="No log found!", Duration=3})
-                task.wait(3)
-            end
-        end
-        task.wait(1)
-    end
-end)
-
-
-
-
-local function getClosestLog()
-    local minDist = math.huge
-    local closest = nil
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "Log" then
-            local pos = nil
-            if obj:IsA("BasePart") then
-                pos = obj.Position
-            elseif obj:IsA("Model") then
-                -- Try PrimaryPart
-                if obj.PrimaryPart then
-                    pos = obj.PrimaryPart.Position
-                else
-                    -- Fallback: Find any BasePart inside the Model
-                    for _, part in ipairs(obj:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            pos = part.Position
-                            break
-                        end
-                    end
-                end
-            end
-            if pos then
-                local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local dist = (hrp.Position - pos).Magnitude
-                    if dist < minDist then
-                        minDist = dist
-                        closest = obj
-                    end
-                end
-            end
-        end
-    end
-    return closest
-end
-
-
-
-local function pressKey(key)
-    key = typeof(key) == "EnumItem" and key or Enum.KeyCode[key]
-    VirtualInputManager:SendKeyEvent(true, key, false, game)
-    task.wait(0.07)
-    VirtualInputManager:SendKeyEvent(false, key, false, game)
-end
-
-
-
--- Variables for optimized aimbot
+-- Optimized Aimbot Logic
 local lastAimbotCheck = 0
-local aimbotCheckInterval = 0.02 -- How often aimbot updates (in seconds)
-local smoothness = 0.2 -- How smoothly the camera moves towards target
+local aimbotCheckInterval = 0.02 -- Faster reaction time
+local smoothness = 0.2 -- Smooth camera interpolation
 
 RunService.RenderStepped:Connect(function()
-    -- Only run if aimbot is enabled and right mouse button is held
     if not AimbotEnabled or not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         FOVCircle.Visible = false
         return
     end
 
     local currentTime = tick()
-    if currentTime - lastAimbotCheck < aimbotCheckInterval then
-        -- Skip until next allowed update time
-        return
-    end
+    if currentTime - lastAimbotCheck < aimbotCheckInterval then return end
     lastAimbotCheck = currentTime
 
     local mousePos = UserInputService:GetMouseLocation()
-    local closestTarget = nil
-    local shortestDistance = math.huge
+    local closestTarget, shortestDistance = nil, math.huge
 
-    -- Search for closest target inside FOV radius
     for _, obj in ipairs(workspace:GetDescendants()) do
         if table.find(AimbotTargets, obj.Name) and obj:IsA("Model") then
             local head = obj:FindFirstChild("Head")
@@ -442,19 +282,15 @@ RunService.RenderStepped:Connect(function()
     end
 
     if closestTarget then
-        -- Smoothly rotate camera towards the target's head
         local currentCF = camera.CFrame
-        local targetCF = CFrame.new(currentCF.Position, closestTarget.Position)
-        camera.CFrame = currentCF:Lerp(targetCF, smoothness)
-
-        -- Keep FOV circle visible and at mouse position
+        local targetCF = CFrame.new(camera.CFrame.Position, closestTarget.Position)
+        camera.CFrame = currentCF:Lerp(targetCF, smoothness) -- Smoothly rotate camera
         FOVCircle.Position = Vector2.new(mousePos.X, mousePos.Y)
         FOVCircle.Visible = true
     else
         FOVCircle.Visible = false
     end
 end)
-
 
 
 -- Fly Logic
@@ -537,28 +373,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Walk Speed Variable
-local currentSpeed = 16
-
--- Function to apply speed
-local function setWalkSpeed(speed)
-    currentSpeed = speed
-    local character = LocalPlayer.Character
-    if character and character:FindFirstChildOfClass("Humanoid") then
-        character:FindFirstChildOfClass("Humanoid").WalkSpeed = speed
-    end
-end
-
--- Update speed whenever character respawns
-LocalPlayer.CharacterAdded:Connect(function(char)
-    task.spawn(function()
-        local humanoid = char:WaitForChild("Humanoid", 5)
-        if humanoid then
-            humanoid.WalkSpeed = currentSpeed
-        end
-    end)
-end)
-
 -- GUI Tabs
 local HomeTab = Window:CreateTab("🏠Home🏠", 4483362458)
 
@@ -570,4 +384,119 @@ HomeTab:CreateButton({
 })
 
 HomeTab:CreateButton({
-  
+    Name = "Teleport to Grinder",
+    Callback = function()
+        LocalPlayer.Character:PivotTo(CFrame.new(16.1,4,-4.6))
+    end
+})
+
+HomeTab:CreateToggle({
+    Name = "Item ESP",
+    CurrentValue = false,
+    Callback = toggleESP
+})
+
+HomeTab:CreateToggle({
+    Name = "NPC ESP",
+    CurrentValue = false,
+    Callback = function(value)
+        toggleNPCESP(value)
+        Rayfield:Notify({
+            Title = "NPC ESP",
+            Content = value and "NPC ESP Enabled" or "NPC ESP Disabled",
+            Duration = 4,
+            Image = 4483362458,
+        })
+    end
+})
+
+HomeTab:CreateToggle({
+    Name = "Auto Tree Farm (Small Tree)",
+    CurrentValue = false,
+    Callback = function(value)
+        AutoTreeFarmEnabled = value
+    end
+})
+
+HomeTab:CreateToggle({
+    Name = "Aimbot (Right Click)",
+    CurrentValue = false,
+    Callback = function(value)
+        AimbotEnabled = value
+        Rayfield:Notify({
+            Title = "Aimbot",
+            Content = value and "Enabled - Hold Right Click to aim." or "Disabled.",
+            Duration = 4,
+            Image = 4483362458,
+        })
+    end
+})
+
+HomeTab:CreateToggle({
+    Name = "Fly (WASD + Space + Shift)",
+    CurrentValue = false,
+    Callback = function(value)
+        toggleFly(value)
+        Rayfield:Notify({
+            Title = "Fly",
+            Content = value and "Fly Enabled" or "Fly Disabled",
+            Duration = 4,
+            Image = 4483362458,
+        })
+    end
+})
+
+-- Teleport Tab
+local TeleTab = Window:CreateTab("🧲Teleport🧲", 4483362458)
+for _, itemName in ipairs(teleportTargets) do
+    TeleTab:CreateButton({
+        Name = "Teleport to " .. itemName,
+        Callback = function()
+            local closest, shortest = nil, math.huge
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj.Name == itemName and obj:IsA("Model") then
+                    local cf = nil
+                    if pcall(function() cf = obj:GetPivot() end) then
+                        -- success
+                    else
+                        local part = obj:FindFirstChildWhichIsA("BasePart")
+                        if part then cf = part.CFrame end
+                    end
+                    if cf then
+                        local dist = (cf.Position - ignoreDistanceFrom).Magnitude
+                        if dist >= minDistance and dist < shortest then
+                            closest = obj
+                            shortest = dist
+                        end
+                    end
+                end
+            end
+            if closest then
+                local cf = nil
+                if pcall(function() cf = closest:GetPivot() end) then
+                    -- success
+                else
+                    local part = closest:FindFirstChildWhichIsA("BasePart")
+                    if part then cf = part.CFrame end
+                end
+                if cf then
+                    LocalPlayer.Character:PivotTo(cf + Vector3.new(0, 5, 0))
+                else
+                    Rayfield:Notify({
+                        Title = "Teleport Failed",
+                        Content = "Could not find a valid position to teleport.",
+                        Duration = 5,
+                        Image = 4483362458,
+                    })
+                end
+            else
+                Rayfield:Notify({
+                    Title = "Item Not Found",
+                    Content = itemName .. " not found or too close to origin.",
+                    Duration = 5,
+                    Image = 4483362458,
+                })
+            end
+        end
+    })
+end 
