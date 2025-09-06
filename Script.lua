@@ -13,8 +13,8 @@ local camera = workspace.CurrentCamera
 -- Window Setup
 local Window = Rayfield:CreateWindow({
     Name = "99 Nights",
-    LoadingTitle = "99 Nights Script",
-    LoadingSubtitle = "by Raygull",
+    LoadingTitle = "scriptsource99NightsInTheForestScript",
+    LoadingSubtitle = "by ScriptSource",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = nil,
